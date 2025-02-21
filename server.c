@@ -6,7 +6,7 @@
 /*   By: staylan <staylan@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/20 16:19:37 by staylan           #+#    #+#             */
-/*   Updated: 2025/02/20 18:00:06 by staylan          ###   ########.fr       */
+/*   Updated: 2025/02/21 15:24:29 by staylan          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,9 +39,7 @@ static void	handle_signal(int signal)
 	if (signal == SIGUSR1)
 		c = c | 1;
 	else if (signal == SIGUSR2)
-	{
 		c = c | 0;
-	}
 	if (i == 8)
 	{
 		write(1, &c, 1);
