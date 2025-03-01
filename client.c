@@ -5,13 +5,21 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: staylan <staylan@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/02/20 16:19:25 by staylan           #+#    #+#             */
-/*   Updated: 2025/02/20 18:36:32 by staylan          ###   ########.fr       */
+/*   Created: 2025/02/09 00:12:31 by dsonmez           #+#    #+#             */
+/*   Updated: 2025/03/01 17:19:49 by staylan          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minitalk.h"
-#include <stdio.h>
+#include <signal.h>
+#include <unistd.h>
+
+static int	g_ack_received = 0;
+
+void	ack_handler(int signo)
+{
+	(void)signo;
+	g_ack_received = 1;
+}
 
 static int	ft_atoi(const char *str)
 {
@@ -22,7 +30,7 @@ static int	ft_atoi(const char *str)
 	i = 0;
 	sign = 1;
 	result = 0;
-	while (str[i] >= 9 && str[i] <= 13 || str[i] == 32)
+	while ((str[i] >= 9 && str[i] <= 13) || str[i] == 32)
 		i++;
 	if (str[i] == 43 || str[i] == 45)
 	{
@@ -38,19 +46,25 @@ static int	ft_atoi(const char *str)
 	return (sign * result);
 }
 
-static void	send_signal(int id, char c)
+void	send_char(int server_pid, char c)
 {
-	int	j;
+	struct sigaction	sa;
+	int					i;
 
-	j = 7;
-	while (j >= 0)
+	i = 0;
+	sa.sa_handler = ack_handler;
+	sa.sa_flags = 0;
+	sigemptyset(&sa.sa_mask);
+	sigaction(SIGUSR1, &sa, NULL);
+	while (i < 8 && !g_ack_received)
 	{
-		if ((c >> j) & 1)
-			kill(id, SIGUSR1);
+		g_ack_received = 0;
+		if (c & (1 << i))
+			kill(server_pid, SIGUSR1);
 		else
-			kill(id, SIGUSR2);
-		j--;
-		usleep(180);
+			kill(server_pid, SIGUSR2);
+		pause();
+		i++;
 	}
 }
 
@@ -63,7 +77,7 @@ int	main(int argc, char **argv)
 		server_id = ft_atoi(argv[1]);
 		while (argv[2][i])
 		{
-			send_signal(server_id, argv[2][i]);
+			send_char(server_id, argv[2][i]);
 			i++;
 		}
 	}

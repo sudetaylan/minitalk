@@ -5,58 +5,54 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: staylan <staylan@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/02/20 16:19:37 by staylan           #+#    #+#             */
-/*   Updated: 2025/02/21 15:24:29 by staylan          ###   ########.fr       */
+/*   Created: 2025/02/09 00:12:19 by dsonmez           #+#    #+#             */
+/*   Updated: 2025/03/01 17:28:41 by staylan          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minitalk.h"
+#include <signal.h>
+#include <unistd.h>
 
-static void	ft_putpid(int s)
+void	signal_handler(int signalnum, siginfo_t *info, void *context)
 {
-	char	i;
-
-	i = 0;
-	if (s > 9)
-	{
-		ft_putpid(s / 10);
-		ft_putpid(s % 10);
-	}
-	else
-	{
-		i = s + 48;
-		write(1, &i, 1);
-	}
-}
-
-static void	handle_signal(int signal)
-{
-	static char	c;
 	static int	i;
+	static char	c;
 
-
+	(void)context;
+	if (signalnum == SIGUSR1)
+		c = c | (1 << i);
 	i++;
-	if (signal == SIGUSR1)
-		c = c | 1;
-	else if (signal == SIGUSR2)
-		c = c | 0;
 	if (i == 8)
 	{
 		write(1, &c, 1);
 		i = 0;
 		c = 0;
 	}
-	c = c << 1;
+	kill(info->si_pid, SIGUSR1);
+}
+void	ft_putpid(int pid)
+{
+	char	c;
+
+	if (pid > 9)
+		ft_putpid(pid / 10);
+	c = pid % 10 + 48;
+	write(1, &c, 1);
 }
 
 int	main(void)
 {
-	int server_id;
+	struct sigaction	sa;
+	int					pid;
 
-	server_id = getpid();
-	ft_putpid(server_id);
-	signal(SIGUSR1, handle_signal);
-	signal(SIGUSR2, handle_signal);
+	sa.sa_sigaction = signal_handler;
+	sa.sa_flags = SA_SIGINFO;
+	sigemptyset(&sa.sa_mask);
+	pid = getpid();
+	write(1, "Server PID: \n", 13);
+	ft_putpid(pid);
+	sigaction(SIGUSR1, &sa, NULL);
+	sigaction(SIGUSR2, &sa, NULL);
 	while (1)
 		pause();
 	return (0);
